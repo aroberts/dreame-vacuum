@@ -28,7 +28,6 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from . import frontend
 from .dreame import DeviceException, DreameVacuumDevice, DreameVacuumProperty, VERSION
 from .const import (
     DOMAIN,
@@ -43,7 +42,6 @@ from .const import (
     CONF_MAP_OBJECTS,
     CONF_HIDDEN_MAP_OBJECTS,
     CONF_VERSION,
-    CONF_DVC_KEY,
     MAP_OBJECTS,
     NOTIFICATION_ID_DUST_COLLECTION,
     NOTIFICATION_ID_CLEANING_PAUSED,
@@ -138,26 +136,6 @@ class DreameVacuumDataUpdateCoordinator(DataUpdateCoordinator[DreameVacuumDevice
                         options[CONF_HIDDEN_MAP_OBJECTS].append(key)
                 del options[CONF_MAP_OBJECTS]
 
-            # Version check to ensure each user only sees dvc notification once
-            if (
-                frontend is not None
-                and not entry.options.get(CONF_DVC_KEY)
-                and (
-                    om := re.match(r"v?(\d+)\.(\d+)\.(\d+)([a-zA-Z].*)?", entry.options.get(CONF_VERSION) or "v0.0.0")
-                )
-                and (nm := re.match(r"v?(\d+)\.(\d+)\.(\d+)([a-zA-Z].*)?", VERSION))
-                and (int(om[1]), int(om[2]), int(om[3]), 0 if om[4] else 1)
-                < (2, 0, 0, 1)
-                <= (int(nm[1]), int(nm[2]), int(nm[3]), 0 if nm[4] else 1)
-            ):
-                from .const import DVC
-
-                persistent_notification.create(
-                    hass=hass,
-                    message=f'### Interface of Dreame Vacuum<center><a href="https://dreame-vacuum-card.tasshack.com/getting-started/installation-and-usage#adding-the-card-to-your-dashboard"><img src="data:image/png;base64,{DVC}"/></a></center>\nDreame Vacuum Card have been added to custom cards registry.',
-                    title="Dreame Vacuum Card",
-                    notification_id=f"{DOMAIN}_dvc",
-                )
             options[CONF_VERSION] = VERSION
             hass.config_entries.async_update_entry(entry=entry, options=options)
 
