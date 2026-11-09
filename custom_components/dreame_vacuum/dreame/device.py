@@ -7284,6 +7284,8 @@ class DreameVacuumDevice:
     def hide_segments(self, segments: list[int], map_id=None):
         """Hide segments while keeping the already hidden ones hidden."""
         map_data = self.status.current_map
+        if map_id:
+            map_data = (self.status.map_data_list or {}).get(map_id, map_data)
         hidden = list((map_data.hidden_segments if map_data else None) or [])
         return self.set_hidden_segments(hidden + [s for s in segments if s not in hidden], map_id)
 
