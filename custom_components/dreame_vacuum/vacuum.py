@@ -640,20 +640,59 @@ async def async_setup_entry(
         "vacuum_split_segments",
         {
             vol.Optional("map_id"): cv.positive_int,
-            vol.Required("segment"): vol.All(vol.Coerce(int)),
-            vol.Required("line"): vol.All(
-                list,
-                vol.ExactSequence(
-                    [
-                        vol.Coerce(int),
-                        vol.Coerce(int),
-                        vol.Coerce(int),
-                        vol.Coerce(int),
-                    ]
+            vol.Optional("segment"): vol.All(vol.Coerce(int)),
+            vol.Required("line"): vol.Any(
+                vol.All(
+                    list,
+                    vol.ExactSequence(
+                        [
+                            vol.Coerce(int),
+                            vol.Coerce(int),
+                            vol.Coerce(int),
+                            vol.Coerce(int),
+                        ]
+                    ),
                 ),
+                vol.All(list, vol.Length(min=2), [vol.All(list, vol.Length(min=2, max=2), [vol.Coerce(int)])]),
             ),
         },
         DreameVacuum.async_split_segments.__name__,
+    )
+
+    platform.async_register_entity_service(
+        "vacuum_add_restricted_zone",
+        {
+            vol.Optional("walls"): vol.All(list),
+            vol.Optional("zones"): vol.All(list, [vol.All(list, vol.Length(min=4), [vol.Coerce(int)])]),
+            vol.Optional("no_mops"): vol.All(list, [vol.All(list, vol.Length(min=4), [vol.Coerce(int)])]),
+        },
+        DreameVacuum.async_add_restricted_zone.__name__,
+    )
+
+    platform.async_register_entity_service(
+        "vacuum_add_carpet_area",
+        {
+            vol.Required("carpets"): vol.All(list, [vol.All(list, vol.Length(min=4), [vol.Coerce(int)])]),
+        },
+        DreameVacuum.async_add_carpet_area.__name__,
+    )
+
+    platform.async_register_entity_service(
+        "vacuum_remove_map_objects",
+        {
+            vol.Required("points"): vol.All(list),
+            vol.Optional("tolerance"): cv.positive_int,
+        },
+        DreameVacuum.async_remove_map_objects.__name__,
+    )
+
+    platform.async_register_entity_service(
+        "vacuum_hide_segments",
+        {
+            vol.Required("segments"): vol.All(list, [vol.Coerce(int)]),
+            vol.Optional("map_id"): vol.Coerce(int),
+        },
+        DreameVacuum.async_hide_segments.__name__,
     )
 
     platform.async_register_entity_service(
@@ -1420,13 +1459,50 @@ class DreameVacuum(DreameVacuumEntity, StateVacuumEntity):
 
     async def async_split_segments(self, map_id=None, segment=None, line=None) -> None:
         """Split segments"""
-        if segment is not None and line is not None:
+        if line is not None:
             await self._try_command(
                 "Unable to call split_segments: %s",
                 self.device.split_segments,
                 map_id,
                 segment,
                 line,
+            )
+
+    async def async_add_restricted_zone(self, walls=None, zones=None, no_mops=None) -> None:
+        """Add restricted zones keeping the existing ones"""
+        await self._try_command(
+            "Unable to call add_restricted_zone: %s",
+            self.device.add_restricted_zone,
+            walls,
+            zones,
+            no_mops,
+        )
+
+    async def async_add_carpet_area(self, carpets=None) -> None:
+        """Add carpet areas keeping the existing ones"""
+        await self._try_command(
+            "Unable to call add_carpet_area: %s",
+            self.device.add_carpet_area,
+            carpets,
+        )
+
+    async def async_remove_map_objects(self, points=None, tolerance=150) -> None:
+        """Remove walls, zones and carpets at the given points"""
+        await self._try_command(
+            "Unable to call remove_map_objects: %s",
+            self.device.remove_map_objects,
+            points,
+            tolerance,
+        )
+
+    async def async_hide_segments(self, segments=None, map_id=None) -> None:
+        """Hide segments keeping the already hidden ones"""
+        if segments:
+            await self._try_command(
+                "Unable to call hide_segments: %s",
+                self.device.hide_segments,
+                segments,
+                map_id,
             )
 
     async def async_set_cleaning_sequence(self, cleaning_sequence) -> None:

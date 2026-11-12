@@ -7120,6 +7120,14 @@ class DreameVacuumDevice:
         if self.status.has_temporary_map:
             raise UnavailableException(key="unavailable_with_temporary_map")
 
+        if line is not None:
+            ## Line can also be drawn as a path, use its first and last points
+            line = self._line_from_points(line)
+            if not segment:
+                segment = self._segment_at((line[0] + line[2]) / 2, (line[1] + line[3]) / 2)
+                if not segment:
+                    raise MissingParameterException(parameter="segment")
+
         if segment and line is not None:
             if map_id == "":
                 map_id = None
@@ -7143,6 +7151,143 @@ class DreameVacuumDevice:
 
             line.append(segment)
             return self.update_map_data({"dsrid": line, "mapid": map_id})
+
+    @staticmethod
+    def _line_from_points(points) -> list[int]:
+        if points and isinstance(points[0], (list, tuple)):
+            if len(points) < 2:
+                raise InvalidActionException(key="invalid_line")
+            return [int(points[0][0]), int(points[0][1]), int(points[-1][0]), int(points[-1][1])]
+        return [int(v) for v in points[:4]]
+
+    @staticmethod
+    def _walls_from_input(walls) -> list[list[int]]:
+        """Accept walls as [x0, y0, x1, y1] lines or as drawn paths, every path step becomes a wall."""
+        if not walls:
+            return []
+        if all(isinstance(p, (list, tuple)) and len(p) == 2 and not isinstance(p[0], (list, tuple)) for p in walls):
+            walls = [walls]
+        result = []
+        for wall in walls:
+            if wall and isinstance(wall[0], (list, tuple)):
+                for i in range(len(wall) - 1):
+                    result.append([int(wall[i][0]), int(wall[i][1]), int(wall[i + 1][0]), int(wall[i + 1][1])])
+            elif len(wall) >= 4:
+                result.append([int(v) for v in wall[:4]])
+        return result
+
+    @staticmethod
+    def _area_bounds(area) -> list[int]:
+        xs = [area.x0, area.x1, area.x2, area.x3]
+        ys = [area.y0, area.y1, area.y2, area.y3]
+        return [int(min(xs)), int(min(ys)), int(max(xs)), int(max(ys))]
+
+    @staticmethod
+    def _point_in_area(x, y, area) -> bool:
+        x0, y0, x1, y1 = DreameVacuumDevice._area_bounds(area)
+        return x0 <= x <= x1 and y0 <= y <= y1
+
+    @staticmethod
+    def _point_near_line(x, y, line, tolerance) -> bool:
+        dx = line.x1 - line.x0
+        dy = line.y1 - line.y0
+        length = dx * dx + dy * dy
+        t = 0 if length == 0 else max(0, min(1, ((x - line.x0) * dx + (y - line.y0) * dy) / length))
+        px = line.x0 + t * dx - x
+        py = line.y0 + t * dy - y
+        return px * px + py * py <= tolerance * tolerance
+
+    def _segment_at(self, x, y) -> int | None:
+        map_data = self.status.current_map
+        if not map_data or map_data.pixel_type is None or not map_data.segments:
+            return None
+        segment_id = DreameVacuumMapDecoder._find_px_type(x, y, map_data, 5)
+        return segment_id if segment_id in map_data.segments else None
+
+    def _current_restrictions(self) -> tuple[list, list, list]:
+        map_data = self.status.current_map
+        if not map_data:
+            raise UnavailableException(key="unavailable_on_current_map")
+        walls = [[int(l.x0), int(l.y0), int(l.x1), int(l.y1)] for l in (map_data.virtual_walls or [])]
+        zones = [self._area_bounds(a) for a in (map_data.no_go_areas or [])]
+        no_mops = [self._area_bounds(a) for a in (map_data.no_mopping_areas or [])]
+        return walls, zones, no_mops
+
+    def add_restricted_zone(self, walls=None, zones=None, no_mops=None) -> dict[str, Any] | None:
+        """Add virtual walls, no-go zones and no-mop zones while keeping the existing ones."""
+        current_walls, current_zones, current_no_mops = self._current_restrictions()
+        return self.set_restricted_zone(
+            current_walls + self._walls_from_input(walls),
+            current_zones + [[int(v) for v in z[:4]] for z in (zones or [])],
+            current_no_mops + [[int(v) for v in z[:4]] for z in (no_mops or [])],
+        )
+
+    def _current_carpets(self) -> tuple[list, list]:
+        map_data = self.status.current_map
+        carpets = []
+        for c in map_data.carpets or []:
+            x0, y0, x1, y1 = self._area_bounds(c)
+            carpets.append([x0, y0, x1, y1, c.id if c.id is not None else -1, 1 if c.ellipse else 0])
+        deleted = [self._area_bounds(c) for c in (map_data.deleted_carpets or [])]
+        return carpets, deleted
+
+    def add_carpet_area(self, carpets=None) -> dict[str, Any] | None:
+        """Add carpet areas while keeping the existing ones."""
+        if not self.status.current_map:
+            raise UnavailableException(key="unavailable_on_current_map")
+        current, deleted = self._current_carpets()
+        return self.set_carpet_area(current + [[int(v) for v in c[:4]] for c in (carpets or [])], deleted)
+
+    def remove_map_objects(self, points, tolerance: int = 150) -> dict[str, Any] | None:
+        """Remove virtual walls, no-go zones, no-mop zones and carpets found at the given points."""
+        map_data = self.status.current_map
+        if not map_data:
+            raise UnavailableException(key="unavailable_on_current_map")
+        if points and not isinstance(points[0], (list, tuple)):
+            points = [points]
+        points = [(p[0], p[1]) for p in points or []]
+        if not points:
+            raise MissingParameterException(parameter="points")
+
+        def hit_area(area):
+            return any(self._point_in_area(x, y, area) for x, y in points)
+
+        walls = [l for l in (map_data.virtual_walls or []) if not any(self._point_near_line(x, y, l, tolerance) for x, y in points)]
+        zones = [a for a in (map_data.no_go_areas or []) if not hit_area(a)]
+        no_mops = [a for a in (map_data.no_mopping_areas or []) if not hit_area(a)]
+
+        result = None
+        if (
+            len(walls) != len(map_data.virtual_walls or [])
+            or len(zones) != len(map_data.no_go_areas or [])
+            or len(no_mops) != len(map_data.no_mopping_areas or [])
+        ):
+            result = self.set_restricted_zone(
+                [[int(l.x0), int(l.y0), int(l.x1), int(l.y1)] for l in walls],
+                [self._area_bounds(a) for a in zones],
+                [self._area_bounds(a) for a in no_mops],
+            )
+
+        if map_data.carpets is not None or map_data.detected_carpets is not None:
+            carpets, deleted = self._current_carpets()
+            kept = [c for c, m in zip(carpets, map_data.carpets or []) if not hit_area(m)]
+            ## Automatically detected carpets can only be ignored
+            ignored = [self._area_bounds(c) for c in (map_data.detected_carpets or []) if hit_area(c)]
+            ignored = [c for c in ignored if c not in deleted]
+            if len(kept) != len(carpets) or ignored:
+                result = self.set_carpet_area(kept, deleted + ignored)
+
+        if result is None:
+            raise NotFoundException(item="map object", id=", ".join(f"{x},{y}" for x, y in points))
+        return result
+
+    def hide_segments(self, segments: list[int], map_id=None):
+        """Hide segments while keeping the already hidden ones hidden."""
+        map_data = self.status.current_map
+        if map_id:
+            map_data = (self.status.map_data_list or {}).get(map_id, map_data)
+        hidden = list((map_data.hidden_segments if map_data else None) or [])
+        return self.set_hidden_segments(hidden + [s for s in segments if s not in hidden], map_id)
 
     def set_cleaning_sequence(self, cleaning_sequence: list[int]) -> dict[str, Any] | None:
         """Set cleaning sequence on current map.

@@ -3000,6 +3000,188 @@
           "description": "Obstacle is ignored or not."
         }
       }
+    },
+    "vacuum_merge_segments": {
+      "name": "Merge Segments",
+      "description": "Merge two neighbouring rooms into one.",
+      "fields": {
+        "segments": {
+          "name": "Segments",
+          "description": "IDs of the two rooms to merge"
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map to edit, defaults to the current map"
+        }
+      }
+    },
+    "vacuum_split_segments": {
+      "name": "Split Segment",
+      "description": "Split a room in two with a line. When the room is not given, the room under the middle of the line is used.",
+      "fields": {
+        "line": {
+          "name": "Line",
+          "description": "[x0, y0, x1, y1] or a path of points, first and last points are used"
+        },
+        "segment": {
+          "name": "Segment",
+          "description": "ID of the room to split"
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map to edit, defaults to the current map"
+        }
+      }
+    },
+    "vacuum_set_restricted_zone": {
+      "name": "Set Restricted Zones",
+      "description": "Replace all virtual walls, no-go zones and no-mop zones of the current map.",
+      "fields": {
+        "walls": {
+          "name": "Virtual walls",
+          "description": "Lines as [x0, y0, x1, y1]"
+        },
+        "zones": {
+          "name": "No-go zones",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        },
+        "no_mops": {
+          "name": "No-mop zones",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_add_restricted_zone": {
+      "name": "Add Restricted Zones",
+      "description": "Add virtual walls, no-go zones and no-mop zones keeping the existing ones.",
+      "fields": {
+        "walls": {
+          "name": "Virtual walls",
+          "description": "Lines as [x0, y0, x1, y1] or paths of points, each step of a path becomes a wall"
+        },
+        "zones": {
+          "name": "No-go zones",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        },
+        "no_mops": {
+          "name": "No-mop zones",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_remove_map_objects": {
+      "name": "Remove Map Objects",
+      "description": "Remove virtual walls, no-go zones, no-mop zones and carpets at the given points. Detected carpets are ignored instead.",
+      "fields": {
+        "points": {
+          "name": "Points",
+          "description": "Points as [x, y]"
+        },
+        "tolerance": {
+          "name": "Tolerance",
+          "description": "Distance in mm to catch a virtual wall"
+        }
+      }
+    },
+    "vacuum_set_carpet_area": {
+      "name": "Set Carpet Areas",
+      "description": "Replace all carpets and ignored carpets of the current map.",
+      "fields": {
+        "carpets": {
+          "name": "Carpets",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        },
+        "deleted_carpets": {
+          "name": "Ignored carpets",
+          "description": "Detected carpets to ignore as [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_add_carpet_area": {
+      "name": "Add Carpet Areas",
+      "description": "Add carpets keeping the existing ones.",
+      "fields": {
+        "carpets": {
+          "name": "Carpets",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_set_hidden_segments": {
+      "name": "Set Hidden Segments",
+      "description": "Replace the list of hidden rooms. An empty list shows every room.",
+      "fields": {
+        "segments": {
+          "name": "Segments",
+          "description": "IDs of the rooms to hide"
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map to edit, defaults to the current map"
+        }
+      }
+    },
+    "vacuum_hide_segments": {
+      "name": "Hide Segments",
+      "description": "Hide rooms keeping the already hidden ones hidden.",
+      "fields": {
+        "segments": {
+          "name": "Segments",
+          "description": "IDs of the rooms to hide"
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map to edit, defaults to the current map"
+        }
+      }
+    },
+    "vacuum_set_segment_type": {
+      "name": "Set Segment Type",
+      "description": "Set the room type, which also sets its default name.",
+      "fields": {
+        "type": {
+          "name": "Type",
+          "description": "Map of room ID to [room type, index]"
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map to edit, defaults to the current map"
+        }
+      }
+    },
+    "vacuum_set_floor_material": {
+      "name": "Set Floor Material",
+      "description": "Set the floor material of rooms.",
+      "fields": {
+        "material": {
+          "name": "Material",
+          "description": "Map of room ID to [material, direction]"
+        },
+        "map_id": {
+          "name": "Map ID",
+          "description": "Map to edit, defaults to the current map"
+        }
+      }
+    },
+    "vacuum_set_virtual_threshold": {
+      "name": "Set Virtual Thresholds",
+      "description": "Replace the virtual thresholds of the current map.",
+      "fields": {
+        "virtual_thresholds": {
+          "name": "Virtual thresholds",
+          "description": "Lines as [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_set_low_lying_area": {
+      "name": "Set Low-lying Areas",
+      "description": "Replace the low-lying areas of the current map.",
+      "fields": {
+        "area": {
+          "name": "Areas",
+          "description": "Rectangles as [x0, y0, x1, y1]"
+        }
+      }
     }
   },
   "exceptions": {

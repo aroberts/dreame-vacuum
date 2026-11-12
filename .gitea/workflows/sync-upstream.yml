@@ -1,0 +1,38 @@
+name: Sync Upstream Tags
+run-name: Check for new upstream tags
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "forks-bot"
+          git config user.email "forks-bot@noreply.git.pcrn.us"
+
+      - name: Sync upstream tags
+        run: ./scripts/sync-upstream.sh sync
+
+      # Page a human on failure. Scheduled runs are triggered by the synthetic
+      # `gitea-actions` user, so Gitea's built-in "run failed" email goes to a
+      # mailbox-less bot — i.e. nowhere. This step opens/updates a Gitea issue
+      # assigned to NOTIFY_ASSIGNEE instead. ISSUE_TOKEN is a forks-bot token
+      # (scope write:issue): the author MUST differ from the assignee or Gitea
+      # self-suppresses the notification, which rules out REPO_TOKEN (the owner)
+      # and the built-in token (no issue scope under restricted Actions mode).
+      - name: Notify on failure
+        if: failure()
+        env:
+          GITEA_TOKEN: ${{ secrets.ISSUE_TOKEN }}
+          NOTIFY_ASSIGNEE: aroberts
+        run: ./scripts/sync-upstream.sh notify-failure

@@ -3000,6 +3000,188 @@
           "description": "Se o obstáculo está a ser ignorado ou não."
         }
       }
+    },
+    "vacuum_merge_segments": {
+      "name": "Juntar cômodos",
+      "description": "Junta dois cômodos vizinhos em um só.",
+      "fields": {
+        "segments": {
+          "name": "Cômodos",
+          "description": "IDs dos dois cômodos a juntar"
+        },
+        "map_id": {
+          "name": "ID do mapa",
+          "description": "Mapa a editar, por padrão o mapa atual"
+        }
+      }
+    },
+    "vacuum_split_segments": {
+      "name": "Dividir cômodo",
+      "description": "Divide um cômodo em dois com uma linha. Sem o cômodo, usa o cômodo no meio da linha.",
+      "fields": {
+        "line": {
+          "name": "Linha",
+          "description": "[x0, y0, x1, y1] ou um caminho de pontos, usa o primeiro e o último"
+        },
+        "segment": {
+          "name": "Cômodo",
+          "description": "ID do cômodo a dividir"
+        },
+        "map_id": {
+          "name": "ID do mapa",
+          "description": "Mapa a editar, por padrão o mapa atual"
+        }
+      }
+    },
+    "vacuum_set_restricted_zone": {
+      "name": "Definir zonas restritas",
+      "description": "Substitui todas as paredes virtuais, zonas proibidas e zonas sem mop do mapa atual.",
+      "fields": {
+        "walls": {
+          "name": "Paredes virtuais",
+          "description": "Linhas como [x0, y0, x1, y1]"
+        },
+        "zones": {
+          "name": "Zonas proibidas",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        },
+        "no_mops": {
+          "name": "Zonas sem mop",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_add_restricted_zone": {
+      "name": "Adicionar zonas restritas",
+      "description": "Adiciona paredes virtuais, zonas proibidas e zonas sem mop mantendo as existentes.",
+      "fields": {
+        "walls": {
+          "name": "Paredes virtuais",
+          "description": "Linhas [x0, y0, x1, y1] ou caminhos de pontos, cada trecho vira uma parede"
+        },
+        "zones": {
+          "name": "Zonas proibidas",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        },
+        "no_mops": {
+          "name": "Zonas sem mop",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_remove_map_objects": {
+      "name": "Remover objetos do mapa",
+      "description": "Remove paredes virtuais, zonas proibidas, zonas sem mop e tapetes nos pontos. Tapetes detectados passam a ser ignorados.",
+      "fields": {
+        "points": {
+          "name": "Pontos",
+          "description": "Pontos como [x, y]"
+        },
+        "tolerance": {
+          "name": "Tolerância",
+          "description": "Distância em mm para pegar uma parede virtual"
+        }
+      }
+    },
+    "vacuum_set_carpet_area": {
+      "name": "Definir tapetes",
+      "description": "Substitui todos os tapetes e tapetes ignorados do mapa atual.",
+      "fields": {
+        "carpets": {
+          "name": "Tapetes",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        },
+        "deleted_carpets": {
+          "name": "Tapetes ignorados",
+          "description": "Tapetes detectados a ignorar como [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_add_carpet_area": {
+      "name": "Adicionar tapetes",
+      "description": "Adiciona tapetes mantendo os existentes.",
+      "fields": {
+        "carpets": {
+          "name": "Tapetes",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_set_hidden_segments": {
+      "name": "Definir cômodos ocultos",
+      "description": "Substitui a lista de cômodos ocultos. Lista vazia mostra todos.",
+      "fields": {
+        "segments": {
+          "name": "Cômodos",
+          "description": "IDs dos cômodos a ocultar"
+        },
+        "map_id": {
+          "name": "ID do mapa",
+          "description": "Mapa a editar, por padrão o mapa atual"
+        }
+      }
+    },
+    "vacuum_hide_segments": {
+      "name": "Ocultar cômodos",
+      "description": "Oculta cômodos mantendo os já ocultos.",
+      "fields": {
+        "segments": {
+          "name": "Cômodos",
+          "description": "IDs dos cômodos a ocultar"
+        },
+        "map_id": {
+          "name": "ID do mapa",
+          "description": "Mapa a editar, por padrão o mapa atual"
+        }
+      }
+    },
+    "vacuum_set_segment_type": {
+      "name": "Definir tipo do cômodo",
+      "description": "Define o tipo do cômodo, o que também define o nome padrão.",
+      "fields": {
+        "type": {
+          "name": "Tipo",
+          "description": "Mapa de ID do cômodo para [tipo, índice]"
+        },
+        "map_id": {
+          "name": "ID do mapa",
+          "description": "Mapa a editar, por padrão o mapa atual"
+        }
+      }
+    },
+    "vacuum_set_floor_material": {
+      "name": "Definir piso",
+      "description": "Define o material do piso dos cômodos.",
+      "fields": {
+        "material": {
+          "name": "Material",
+          "description": "Mapa de ID do cômodo para [material, direção]"
+        },
+        "map_id": {
+          "name": "ID do mapa",
+          "description": "Mapa a editar, por padrão o mapa atual"
+        }
+      }
+    },
+    "vacuum_set_virtual_threshold": {
+      "name": "Definir soleiras virtuais",
+      "description": "Substitui as soleiras virtuais do mapa atual.",
+      "fields": {
+        "virtual_thresholds": {
+          "name": "Soleiras virtuais",
+          "description": "Linhas como [x0, y0, x1, y1]"
+        }
+      }
+    },
+    "vacuum_set_low_lying_area": {
+      "name": "Definir áreas baixas",
+      "description": "Substitui as áreas baixas do mapa atual.",
+      "fields": {
+        "area": {
+          "name": "Áreas",
+          "description": "Retângulos como [x0, y0, x1, y1]"
+        }
+      }
     }
   },
   "exceptions": {
