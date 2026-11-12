@@ -1,0 +1,46 @@
+name: Release
+
+# Runs on GitHub only. Gitea reads .gitea/workflows and ignores this directory
+# whenever .gitea/workflows exists.
+#
+# HACS offers updates from GitHub Releases, not from bare tags. The Gitea sync
+# publishes each synced tag, the Gitea push mirror carries the tag here, and
+# this job turns it into a Release. A mirror push that carries more than three
+# tags at once creates no tag events, so a release missed that way needs
+# `gh release create <tag>` by hand.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to release
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.server_url == 'https://github.com'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+            exit 0
+          fi
+          # Upstream marks betas PEP 440 style (v2.0.0b25). HACS hides
+          # prereleases unless beta versions are enabled for the repository.
+          prerelease=()
+          if [[ "$TAG" =~ [0-9](a|b|rc)[0-9]+$ ]]; then
+            prerelease=(--prerelease)
+          fi
+          gh release create "$TAG" "${prerelease[@]}" --verify-tag --title "$TAG" --notes \
+            "Upstream [$TAG](https://github.com/Tasshack/dreame-vacuum/releases/tag/$TAG) with this fork's changes applied. See [FORK.md](https://github.com/$GH_REPO/blob/$TAG/FORK.md)."
